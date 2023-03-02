@@ -4,4 +4,4 @@ I will add more detailed explanation later
 thank you
 
 - https://echo.labstack.com/
-- https://gorm.io/"# kadiog-ent" 
+- https://entgo.io/
