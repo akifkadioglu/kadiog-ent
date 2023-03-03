@@ -17,7 +17,9 @@ func Init() {
 		AllowOrigins: []string{"*"},
 		AllowHeaders: []string{"*"},
 	}))
-	Web(Network)
+
+	Routes(Network)
+
 	E.GET("/debug/*", echo.WrapHandler(http.DefaultServeMux))
 	port := env.Getenv(env.HOST) + ":" + env.Getenv(env.PORT)
 	if port == ":" {

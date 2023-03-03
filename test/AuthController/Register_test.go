@@ -12,7 +12,7 @@ import (
 func TestRegister(t *testing.T) {
 	testinitializer.Starter()
 
-	json := `{"email":"akifkadioglu@yaani.com","name":"akif","password":"deneme1","password_confirmation":"deneme1","username":"akif"}`
+	json := `{"email":"akifkadioglu@yaani.com","name":"akif","password":"deneme1","password_confirmation":"deneme1"}`
 
 	c, rec := testinitializer.Method(http.MethodPost, json)
 

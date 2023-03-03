@@ -10,12 +10,12 @@ import (
 
 	"setup/ent/migrate"
 
-	"setup/ent/notes"
 	"setup/ent/user"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
+	"github.com/google/uuid"
 )
 
 // Client is the client that holds all ent builders.
@@ -23,8 +23,6 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
-	// Notes is the client for interacting with the Notes builders.
-	Notes *NotesClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 }
@@ -40,7 +38,6 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
-	c.Notes = NewNotesClient(c.config)
 	c.User = NewUserClient(c.config)
 }
 
@@ -124,7 +121,6 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	return &Tx{
 		ctx:    ctx,
 		config: cfg,
-		Notes:  NewNotesClient(cfg),
 		User:   NewUserClient(cfg),
 	}, nil
 }
@@ -145,7 +141,6 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	return &Tx{
 		ctx:    ctx,
 		config: cfg,
-		Notes:  NewNotesClient(cfg),
 		User:   NewUserClient(cfg),
 	}, nil
 }
@@ -153,7 +148,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		Notes.
+//		User.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -175,144 +170,22 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
-	c.Notes.Use(hooks...)
 	c.User.Use(hooks...)
 }
 
 // Intercept adds the query interceptors to all the entity clients.
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
-	c.Notes.Intercept(interceptors...)
 	c.User.Intercept(interceptors...)
 }
 
 // Mutate implements the ent.Mutator interface.
 func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
-	case *NotesMutation:
-		return c.Notes.mutate(ctx, m)
 	case *UserMutation:
 		return c.User.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
-	}
-}
-
-// NotesClient is a client for the Notes schema.
-type NotesClient struct {
-	config
-}
-
-// NewNotesClient returns a client for the Notes from the given config.
-func NewNotesClient(c config) *NotesClient {
-	return &NotesClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `notes.Hooks(f(g(h())))`.
-func (c *NotesClient) Use(hooks ...Hook) {
-	c.hooks.Notes = append(c.hooks.Notes, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `notes.Intercept(f(g(h())))`.
-func (c *NotesClient) Intercept(interceptors ...Interceptor) {
-	c.inters.Notes = append(c.inters.Notes, interceptors...)
-}
-
-// Create returns a builder for creating a Notes entity.
-func (c *NotesClient) Create() *NotesCreate {
-	mutation := newNotesMutation(c.config, OpCreate)
-	return &NotesCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of Notes entities.
-func (c *NotesClient) CreateBulk(builders ...*NotesCreate) *NotesCreateBulk {
-	return &NotesCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for Notes.
-func (c *NotesClient) Update() *NotesUpdate {
-	mutation := newNotesMutation(c.config, OpUpdate)
-	return &NotesUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *NotesClient) UpdateOne(n *Notes) *NotesUpdateOne {
-	mutation := newNotesMutation(c.config, OpUpdateOne, withNotes(n))
-	return &NotesUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *NotesClient) UpdateOneID(id int) *NotesUpdateOne {
-	mutation := newNotesMutation(c.config, OpUpdateOne, withNotesID(id))
-	return &NotesUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for Notes.
-func (c *NotesClient) Delete() *NotesDelete {
-	mutation := newNotesMutation(c.config, OpDelete)
-	return &NotesDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *NotesClient) DeleteOne(n *Notes) *NotesDeleteOne {
-	return c.DeleteOneID(n.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *NotesClient) DeleteOneID(id int) *NotesDeleteOne {
-	builder := c.Delete().Where(notes.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &NotesDeleteOne{builder}
-}
-
-// Query returns a query builder for Notes.
-func (c *NotesClient) Query() *NotesQuery {
-	return &NotesQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeNotes},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a Notes entity by its id.
-func (c *NotesClient) Get(ctx context.Context, id int) (*Notes, error) {
-	return c.Query().Where(notes.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *NotesClient) GetX(ctx context.Context, id int) *Notes {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// Hooks returns the client hooks.
-func (c *NotesClient) Hooks() []Hook {
-	return c.hooks.Notes
-}
-
-// Interceptors returns the client interceptors.
-func (c *NotesClient) Interceptors() []Interceptor {
-	return c.inters.Notes
-}
-
-func (c *NotesClient) mutate(ctx context.Context, m *NotesMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&NotesCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&NotesUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&NotesUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&NotesDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown Notes mutation op: %q", m.Op())
 	}
 }
 
@@ -362,7 +235,7 @@ func (c *UserClient) UpdateOne(u *User) *UserUpdateOne {
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *UserClient) UpdateOneID(id int) *UserUpdateOne {
+func (c *UserClient) UpdateOneID(id uuid.UUID) *UserUpdateOne {
 	mutation := newUserMutation(c.config, OpUpdateOne, withUserID(id))
 	return &UserUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -379,7 +252,7 @@ func (c *UserClient) DeleteOne(u *User) *UserDeleteOne {
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *UserClient) DeleteOneID(id int) *UserDeleteOne {
+func (c *UserClient) DeleteOneID(id uuid.UUID) *UserDeleteOne {
 	builder := c.Delete().Where(user.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -396,12 +269,12 @@ func (c *UserClient) Query() *UserQuery {
 }
 
 // Get returns a User entity by its id.
-func (c *UserClient) Get(ctx context.Context, id int) (*User, error) {
+func (c *UserClient) Get(ctx context.Context, id uuid.UUID) (*User, error) {
 	return c.Query().Where(user.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *UserClient) GetX(ctx context.Context, id int) *User {
+func (c *UserClient) GetX(ctx context.Context, id uuid.UUID) *User {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -437,9 +310,9 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Notes, User []ent.Hook
+		User []ent.Hook
 	}
 	inters struct {
-		Notes, User []ent.Interceptor
+		User []ent.Interceptor
 	}
 )

@@ -13,12 +13,12 @@ The "network" variable is used for publicly accessible urls.
 The "auth" variable is urls that can only be used by users who own the token.
 */
 
-func Web(Network *echo.Group) {
+func Routes(Network *echo.Group) {
 	auth := Network.Group("")
 	auth.Use(adapter.AuthAdapter())
 
 	//user
-	Network.GET("/login", authcontroller.Login)
+	Network.POST("/login", authcontroller.Login)
 	Network.POST("/register", authcontroller.Register)
 
 	Network.GET("/", indexcontroller.Index)

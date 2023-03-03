@@ -11,7 +11,7 @@ func Register(name string, c echo.Context) string {
 			Copyright:   "Setup",
 			TroubleText: "Setup",
 			Name:        "Setup",
-			Link:        "https://github.com/akifkadioglu/go-echo-gorm-mysql-setup",
+			Link:        "https://github.com/akifkadioglu/kadiog-ent",
 		},
 	}
 
@@ -30,7 +30,7 @@ func Register(name string, c echo.Context) string {
 					Button: hermes.Button{
 						Color: "#357EC7",
 						Text:  "Confirm button",
-						Link:  "https://github.com/akifkadioglu/go-echo-gorm-mysql-setup",
+						Link:  "https://github.com/akifkadioglu/kadiog-ent",
 					},
 				},
 			},

@@ -34,11 +34,11 @@ func Login(c echo.Context) error {
 		return err
 	}
 	query := db.User.Query().Where(func(s *sql.Selector) {
-		s.Where(sql.EQ(user.FieldName, input.Email))
+		s.Where(sql.EQ(user.FieldEmail, input.Email))
 	})
-	user, _ := query.First(context.Background())
-
-	if count, err := query.Count(context.Background()); count == 0 && err != nil {
+	user, err := query.First(context.Background())
+	
+	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			variables.MESSAGE: localization.TR(language.PASSWORD_AND_EMAIL_DONT_MATCH, c),
 		})
@@ -51,7 +51,7 @@ func Login(c echo.Context) error {
 	}
 
 	var claims = &models.JwtCustomClaims{
-		UserId: user.UUID.String(),
+		UserId: user.ID.String(),
 		Time:   time.Now().Format("2006-01-02 15:04:05"),
 		Name:   user.Name,
 		StandardClaims: jwt.StandardClaims{
